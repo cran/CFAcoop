@@ -8,14 +8,14 @@
 #'   treatment-free reference survival
 #' @param par_treat \code{summary.lm} object or 2-column matrix for the
 #'   clonogenic survival after treatment
-#' @param c_range colony numbers for which the survival fraction is calculated
-#'   (default = c(5, 20, 100))
+#' @param C colony number for which the survival fraction is calculated
+#'   (default = 20)
 #'
-#' @return vector of survival fractions.
+#' @return survival fractions.
 #'   If par_ref and par_treat are \code{summary.lm} objects,
-#'   vector is of the same length as c_range.
+#'   a scalar is returned.
 #'   If par_ref and par_treat are matrices,
-#'   vector is of the same length as nrow(par_treat)
+#'   a vector of the same length as nrow(par_treat) is returned
 #'
 #' @examples
 #' seeded <- 10^(seq(1, 5, 0.5))
@@ -34,7 +34,7 @@
 #' calculate_sf(par_ref = fit_ref, par_treat = fit_treat)
 #' @export
 #'
-calculate_sf <- function(par_ref, par_treat, c_range = c(5, 20, 100)) {
+calculate_sf <- function(par_ref, par_treat, C = 20) {
   if (!prod(c(class(par_ref)[1], class(par_treat)[1]) %in% c(
     "summary.lm",
     "matrix"
@@ -47,22 +47,22 @@ calculate_sf <- function(par_ref, par_treat, c_range = c(5, 20, 100)) {
   if (class(par_ref)[1] == "summary.lm") {
     # calculate survival fraction from two sfit-objects or two pairs c(a,b)
     SF <-
-      exp(((log(c_range) - par_ref$coefficients[1, 1]) /
+      exp(((log(C) - par_ref$coefficients[1, 1]) /
         par_ref$coefficients[2, 1]) -
-        ((log(c_range) - par_treat$coefficients[1, 1]) /
+        ((log(C) - par_treat$coefficients[1, 1]) /
           par_treat$coefficients[2, 1]))
-    names(SF) <- c_range
+    names(SF) <- C
   } else {
     if (!identical(dim(par_ref), dim(par_treat))) {
       stop("error: par_ref and par_treat must be of identical size")
     }
     if (nrow(par_ref) > 1) {
-      SF <- exp(((log(c_range[1]) - par_ref[, 1]) / par_ref[, 2]) -
-        ((log(c_range[1]) - par_treat[, 1]) / par_treat[, 2]))
+      SF <- exp(((log(C) - par_ref[, 1]) / par_ref[, 2]) -
+        ((log(C[1]) - par_treat[, 1]) / par_treat[, 2]))
     } else {
-      SF <- exp(((log(c_range) - par_ref[1]) / par_ref[2]) -
-        ((log(c_range) - par_treat[1]) / par_treat[2]))
-      names(SF) <- c_range
+      SF <- exp(((log(C) - par_ref[1]) / par_ref[2]) -
+        ((log(C) - par_treat[1]) / par_treat[2]))
+      names(SF) <- C
     }
   }
   return(SF)

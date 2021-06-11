@@ -4,7 +4,7 @@
 \alias{calculate_sf}
 \title{calculate_sf}
 \usage{
-calculate_sf(par_ref, par_treat, c_range = c(5, 20, 100))
+calculate_sf(par_ref, par_treat, C = 20)
 }
 \arguments{
 \item{par_ref}{\code{summary.lm} object or 2-column matrix for the
@@ -13,15 +13,15 @@ treatment-free reference survival}
 \item{par_treat}{\code{summary.lm} object or 2-column matrix for the
 clonogenic survival after treatment}
 
-\item{c_range}{colony numbers for which the survival fraction is calculated
-(default = c(5, 20, 100))}
+\item{C}{colony number for which the survival fraction is calculated
+(default = 20)}
 }
 \value{
-vector of survival fractions.
+survival fractions.
   If par_ref and par_treat are \code{summary.lm} objects,
-  vector is of the same length as c_range.
+  a scalar is returned.
   If par_ref and par_treat are matrices,
-  vector is of the same length as nrow(par_treat)
+  a vector of the same length as nrow(par_treat) is returned
 }
 \description{
 calculates the survival fraction according

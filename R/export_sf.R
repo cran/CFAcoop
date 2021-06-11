@@ -70,11 +70,19 @@ export_sf <- function(SF) {
   result <- data.frame(
     "cell.line" = NA,
     "treatment" = NA,
-    "ln(a)" = NA,
-    "ln(a).se" = NA,
+    "ln.a" = NA,
+    "sd.ln.a" = NA,
     "b" = NA,
-    "b.se" = NA,
-    "r" = NA
+    "sd.b" = NA,
+    "r.ln.a.b" = NA,
+    "SF" = NA,
+    "sd.SF" = NA,
+    "lb.SF" = NA,
+    "ub.SF" = NA,
+    "log10.SF" = NA,
+    "sd.log10.SF" = NA,
+    "lb.log10.SF" = NA,
+    "ub.log10.SF" = NA
   )
   cur.index <- 1
   for (i in seq_along(SF)) {
@@ -91,32 +99,7 @@ export_sf <- function(SF) {
           prod(sqrt(diag(vcov(cSF$fit[[j]])))), digits = 3)
       )
       result[cur.index, 2:7] <- cur.exp
-      if (j > 1) {
-        for (k in seq_along(cSF$SF[[j - 1]])) {
-          SF_C <- paste0("SF(", names(cSF$SF[[j - 1]])[k], ")")
-          SF_C_lb <- paste0("SF(", names(cSF$SF[[j - 1]])[k], ")_uncert_lb")
-          SF_C_ub <- paste0("SF(", names(cSF$SF[[j - 1]])[k], ")_uncert_ub")
-          if (!(SF_C %in% colnames(result))) {
-            sofar <- colnames(result)
-            result <- cbind(result, NA)
-            result <- cbind(result, NA)
-            result <- cbind(result, NA)
-            colnames(result) <- c(sofar, c(SF_C, SF_C_lb, SF_C_ub))
-          }
-          result[cur.index, colnames(result) %in% SF_C] <- round(
-            cSF$SF[[j - 1]][k],
-            digits = 4
-          )
-          result[cur.index, colnames(result) %in% SF_C_lb] <- round(
-            cSF$uncertainty[[j - 1]][k, 1],
-            digits = 4
-          )
-          result[cur.index, colnames(result) %in% SF_C_ub] <- round(
-            cSF$uncertainty[[j - 1]][k, 2],
-            digits = 4
-          )
-        }
-      }
+      result[cur.index, 8:15] <- round(cSF$uncertainty[j,3:10],digits = 4)
       cur.index <- cur.index + 1
     }
   }

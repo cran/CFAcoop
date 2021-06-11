@@ -39,10 +39,9 @@ test_that("output format", {
   set.seed(seed.bypass)
   expect_equal(class(analyze_survival(RD = D)$fit), "list")
   expect_equal(class(analyze_survival(RD = D)$fit[[1]]), "summary.lm")
-  expect_equal(class(analyze_survival(RD = D)$SF), "list")
+  expect_equal(class(analyze_survival(RD = D)$SF), "numeric")
   expect_equal(class(analyze_survival(RD = D)$SF[[1]]), "numeric")
-  expect_equal(class(analyze_survival(RD = D)$uncertainty), "list")
-  expect_equal(class(analyze_survival(RD = D)$uncertainty[[1]])[1], "matrix")
+  expect_equal(class(analyze_survival(RD = D)$uncertainty), "data.frame")
 })
 
 test_that("find c_range", {

@@ -65,6 +65,13 @@ plot_sf <- function(SF, showUncertainty = TRUE) {
       "error: empty SF object cannot be plotted."
     )
   }
+  if ((length(SF) == 7) & (typeof(SF[[1]]) == "character")){
+    SF <- list("SF" = SF)
+  } else if (typeof(SF[[1]]) == "character") {
+    stop(
+      "error: no SF object - cannot be plotted."
+    )
+  }
   oldpar <- par(no.readonly = TRUE)
   on.exit(par(oldpar))
   par(mfrow = c(2, length(SF)))
@@ -76,12 +83,13 @@ plot_sf <- function(SF, showUncertainty = TRUE) {
     "Exp" = NA,
     "treat" = NA,
     "sf" = NA,
-    "q1" = NA,
-    "q2" = NA
+    "sf.msd" = NA,
+    "sf.psd" = NA
   )
   alpha_bg <- 2 * 42
   for (t in seq_along(SF)) {
     CurSF <- SF[[t]]
+    CurUM <- CurSF$uncertainty
     N_treat <- length(CurSF$fit)
     if (CurSF$name == "no name") {
       CurSF$name <- paste0("Experiment ", t)
@@ -166,26 +174,16 @@ plot_sf <- function(SF, showUncertainty = TRUE) {
       )
     )
 
-    abline(
-      a = 0, b = 1, lty = 2,
-      col = rgb(25, 25, 25, alpha = alpha_bg, maxColorValue = 255)
-    )
-    abline(
-      a = -1, b = 1, lty = 2,
-      col = rgb(25, 25, 25, alpha = alpha_bg, maxColorValue = 255)
-    )
-    abline(
-      a = -2, b = 1, lty = 2,
-      col = rgb(25, 25, 25, alpha = alpha_bg, maxColorValue = 255)
-    )
-    abline(
-      a = -3, b = 1, lty = 2,
-      col = rgb(25, 25, 25, alpha = alpha_bg, maxColorValue = 255)
-    )
-    abline(
-      a = -4, b = 1, lty = 2,
-      col = rgb(25, 25, 25, alpha = alpha_bg, maxColorValue = 255)
-    )
+    for (a.l in 0:-4){
+      abline(
+        a = a.l,
+        b = 1,
+        lty = 2,
+        col = rgb(25, 25, 25,
+                  alpha = alpha_bg,
+                  maxColorValue = 255)
+      )
+    }
     abline(
       a = CurSF$fit[[1]]$coefficients[1, 1] / log(10),
       b = CurSF$fit[[1]]$coefficients[2, 1],
@@ -253,19 +251,19 @@ plot_sf <- function(SF, showUncertainty = TRUE) {
           maxColorValue = 1
         )
       )
-      sf_vec <- c(sf_vec, CurSF$SF[[i - 1]])
-      q1_vec <- c(q1_vec, CurSF$uncertainty[[i - 1]][, 1])
-      q2_vec <- c(q2_vec, CurSF$uncertainty[[i - 1]][, 2])
-      x_vec <- c(x_vec, rep(CurSF$xtreat[i], length(CurSF$SF[[i - 1]])))
-      col_vec <- c(col_vec, rep(colhex[i], length(CurSF$SF[[i - 1]])))
+      sf_vec <- c(sf_vec, CurSF$"SF"[i - 1])
+      q1_vec <- c(q1_vec, 10^(CurUM$log10.SF[i]-CurUM$sd.log10.SF[i]))
+      q2_vec <- c(q2_vec, 10^(CurUM$log10.SF[i]+CurUM$sd.log10.SF[i]))
+      x_vec <- c(x_vec, CurSF$"xtreat"[i])
+      col_vec <- c(col_vec, colhex[i])
     }
     keep_sf <-
       data.frame(
         "Exp" = rep(t, length(x_vec)),
         "treat" = x_vec,
         "sf" = sf_vec,
-        "q1" = q1_vec,
-        "q2" = q2_vec
+        "sf.msd" = q1_vec,
+        "sf.psd" = q2_vec
       )
     collect_sf <- rbind(collect_sf, keep_sf)
   }
@@ -314,7 +312,7 @@ plot_sf <- function(SF, showUncertainty = TRUE) {
       labels = PD$treat
     )
     if (showUncertainty) {
-      with(data = PD, errbar(treat, log10(sf), log10(q1), log10(q2),
+      with(data = PD, errbar(treat, log10(sf), log10(sf.msd), log10(sf.psd),
         col = col_vec,
         add = TRUE, pch = 1, errbar.col = col_vec
       ))

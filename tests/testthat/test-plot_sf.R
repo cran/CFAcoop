@@ -17,6 +17,8 @@ test_that("input", {
   }
   expect_error(plot_sf(SF = SF.list))
   expect_error(plot_sf(SF = c()))
+  expect_error(plot_sf(SF = "test"))
+  plot_sf(SF.list[[1]])
 })
 
 test_that("no output", {

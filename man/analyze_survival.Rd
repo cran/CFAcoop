@@ -4,7 +4,7 @@
 \alias{analyze_survival}
 \title{analyze_survival}
 \usage{
-analyze_survival(RD, name = "no name", xtreat = NULL, c_range = c(5, 20, 100))
+analyze_survival(RD, name = "no name", xtreat = NULL, C = 20)
 }
 \arguments{
 \item{RD}{data.frame or matrix containing a table of experiment data}
@@ -14,15 +14,15 @@ analyze_survival(RD, name = "no name", xtreat = NULL, c_range = c(5, 20, 100))
 \item{xtreat}{optional: treatment dose of the colonies counted in the
 corresponding columns of RD}
 
-\item{c_range}{number or vector of numbers of colonies counted for which
-the survival fraction is to be calculated (default = c(5, 20, 100))}
+\item{C}{number of colonies counted for which the survival fraction is to be
+calculated (default = 20))}
 }
 \value{
 list object containing several experiments and treatments organized
   for convenient plotting with \code{plot_sf}
 }
 \description{
-wrapper function for robust analysis clonogenic survival data
+wrapper function for robust analysis of clonogenic survival data
   from the colony formation assay according to Brix et al. (2020),
   Radiation Oncology.
   Mean values are calculated and used for power regression.
@@ -44,7 +44,7 @@ SF <- vector("list",2)
 SF[[1]] <- analyze_survival(RD = df.1,
                             name = "cell line a",
                             xtreat = c(0,1,4),
-                            c_range = c(5,20,100))
+                            C = 20)
 SF[[2]] <- analyze_survival(RD = df.2,
                             name = "cell line b",
                             xtreat = c(0,1,4))

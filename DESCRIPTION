@@ -1,7 +1,7 @@
 Package: CFAcoop
 Type: Package
 Title: Colony Formation Assay: Taking into Account Cellular Cooperation
-Version: 0.1.0
+Version: 1.0.0
 Authors@R: c(
     person("Daniel", "Samaga", 
            email = "daniel.samaga@helmholtz-muenchen.de",
@@ -31,14 +31,14 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
-Imports: mvtnorm, Hmisc
+Imports: Hmisc
 Suggests: knitr, rmarkdown, testthat
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2020-11-23 07:56:30 UTC; daniel.samaga
+Packaged: 2021-06-11 08:06:27 UTC; daniel.samaga
 Author: Daniel Samaga [cre, aut],
   Nikko Brix [aut],
   Kirsten Lauber [aut],
   Horst Zitzelsberger [aut]
 Repository: CRAN
-Date/Publication: 2020-11-25 09:30:02 UTC
+Date/Publication: 2021-06-11 09:10:08 UTC

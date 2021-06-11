@@ -123,7 +123,7 @@ SF[[1]] <- analyze_survival(
   RD = data1[, c("Cells seeded","0 Gy","1 Gy","2 Gy","4 Gy","6 Gy","8 Gy")], 
   name = as.character(data1[1,1]), 
   xtreat = c(0, 1, 2, 4, 6, 8), 
-  c_range = c(5, 20, 100))
+  C = 20)
 SF[[2]] <- analyze_survival(
   RD = data2[,-1], 
   name = as.character(data2[1,1]), 
@@ -145,9 +145,10 @@ any substantially non-linear relation (i.e. $b \neq 1$) between the number of
 colonies counted ($C$) 
 and the number of cells seeded ($S$) can be spotted easily.  
 The dots in the treatment response curves correspond to the survival fractions
-at $C = 5, 20$ and $100$, with error bars indicating the uncertainty bands 
-calculated as $2.5\%$ and $97.5\%$-percentiles of the parametric bootstrap 
-($N = 1000$) evaluating the covariance matrices of the power regressions.
+at $C = 20$ with error bars indicating the uncertainty of the estimated 
+survival fractions in terms of its standard deviation. 
+This uncertainty is calculated via First-Order-Taylor-Series-Approximation of 
+$SF_x(C)$.
 
 All information used for plotting is contained in the objects returned by 
 `` `analyze_survival` ``. 
@@ -174,10 +175,10 @@ All information of this `` `data.frame` `` is also accessible directly in the
 object returned by `` `analyze_survival` ``.
 For instance, the information about the regression of the 0 Gy reference of the 
 cell line BT20 or the survival fractions of the 5 treatments for T47D 
-(at $C = 5, 20$ and $100$) can be recalled by: 
+(at $C = 20$) can be recalled by: 
 ```{r sf_details}
-SF[[1]]$fit[1]
-SF[[2]]$SF
+SF[[2]]$fit[1]
+SF[[1]]$SF
 ```
 
 # Details for Focussed Analysis
@@ -190,7 +191,7 @@ We assume that the underlying functional dependency of seeded cells and counted
 colonies is of the form
 \[C = a \cdot S^{b},\]
 where $b$ indicates the degree of cellular cooperation 
-($b = 1$ is implicitely assumed for the PE-based approach).
+($b = 1$ is implicitly assumed for the PE-based approach).
 
 The coefficient $b$ is estimated in a linear regression model
 \[log(C) = log(a) + b \cdot log(S) + \varepsilon, \varepsilon \sim \mathcal{N}(0,\sigma^2). \]
@@ -220,7 +221,7 @@ abline(a = log10(exp(1)) * par_0$coefficients[1, 1], b = par_0$coefficients[2, 1
 With the results of this function, we can also test for cellular cooperation.
 Note, that the _p-value_ in the _coefficients_ table corresponds to the 
 null hypothesis $b = 0$, but we are interested in the null hypothesis of 
-$b \leq 1$. 
+$b = 1$. 
 Thus, we find our p-value of interest by computing
 
 ```{r TestingCooperation}
@@ -249,30 +250,50 @@ data <- subset.data.frame(x = CFAdata, subset = CFAdata$cell.line == "BT20")
 data <- aggregate(x = data[, -1], by = list(data$`Cells seeded`), FUN = "mean", na.rm = TRUE)
 par_0 <- pwr_reg(seeded = data$`Cells seeded`, counted = data$`0 Gy`)
 par_4 <- pwr_reg(seeded = data$`Cells seeded`, counted = data$`4 Gy`)
-calculate_sf(par_ref = par_0, par_treat = par_4, c_range = c(5, 100))
+calculate_sf(par_ref = par_0, par_treat = par_4, C = 20)
 ```
-
-Since the SF-values are solely dependent on the estimated parameters in the 
-power regression, the inherent uncertainty can be assessed via parametric 
-bootstrapping, namely:
-```{r bootstrapUncertainty}
-ParSet_0 <- mvtnorm::rmvnorm(n = 10^4,mean = par_0$coefficients[,1],
-                             sigma = vcov(object = par_0))
-ParSet_4 <- mvtnorm::rmvnorm(n = 10^4,mean = par_4$coefficients[,1],
-                             sigma = vcov(object = par_4))
-parbootstrap <- calculate_sf(par_ref = ParSet_0, 
-                             par_treat = ParSet_4, 
-                             c_range = c(5, 100))
-cat(c(mean(parbootstrap),sd(parbootstrap)))
-cat(quantile(x = parbootstrap,probs = c(0.025,0.5,0.975)))
-```
-
 
 ### Remark on Ignoring Cellular Cooperation 
 Note that in case of cooperative cell lines, the parameter $a$ does not 
 correspond to a plating efficiency as for non-cooperative cell lines.
 The concept of a characteristic plating efficiency does not apply to 
 cooperative cell lines.
+
+## Determine Uncertainty of Survival Fractions
+The survival fraction at $C$ for treatment $x$ is calculated by the function
+\[SF_x(C) = \frac{S_0(C)}{S_x(C)} 
+        = exp\left( \frac{log\left(\frac{C}{a_0}\right)}{b_0}
+          - \frac{log\left(\frac{C}{a_x}\right)}{b_x}\right).\]
+
+Since the SF-values are solely dependent on the estimated parameters in the 
+power regression (and the chosen $C$), 
+the inherent uncertainty can be assessed via parametric 
+bootstrapping (e.g. using the package **mvtnorm** to generate parameter sets 
+according to the variance-covariance matrix of the fit), 
+or by following the 
+laws of error propagation (First-Order Taylor-Series Approximation).
+
+We choose the analytic approximation. 
+In order to build meaningful uncertainty intervals (i.e. respect that survival 
+fractions will never be below zero), we work on the log-scale 
+and transform the boundaries to the linear scale at the end.
+
+For the sake of a shorter notation, we write:
+\[g = log(SF_x(C)) = \frac{d-\alpha_0}{b_0} - \frac{d-\alpha_x}{b_x} \]
+
+According to $\Sigma_g \approx J \Sigma_pJ^T$, where $J$ denotes the 
+Jacobian of $g$ and $\Sigma_p$ the variance-covariance matrix of the estimated 
+parameters $\alpha = log(a)$ and $b$ at $0$ and $x$ Gy, we find
+\[\sigma_g^2 \approx \frac{1}{b_0^2} z_0 \Sigma_0 z_0^T + \frac{1}{b_x^2} z_x \Sigma_x z_x^T \]
+with 
+\[ 
+z_x = \left(\begin{matrix}1 & \frac{d-\alpha_x}{b_x}\end{matrix}\right)
+\]
+and
+\[\Sigma_x = \left(\begin{matrix}
+\sigma_{\alpha_x}^2 & \sigma_{\alpha_x b_x}\\
+\sigma_{\alpha_x b_x} & \sigma_{b_x}^2
+\end{matrix} \right).\]
 
 # What's the problem with PE-based analysis? 
 
@@ -326,8 +347,8 @@ is no big difference in this variability/uncertainty.
 
 ```{r PEfail2}
 range(SF_resample,na.rm = TRUE)
-as_nc_0 <- analyze_survival(RD = data[,-1],c_range = c(20))
-as_nc_0$uncertainty[[3]]
+as_nc_0 <- analyze_survival(RD = data[,-1],C = 20)
+as_nc_0$uncertainty[4,c(3,5,6)]
 ```
 
 ## (2) The cooperative case
@@ -356,34 +377,20 @@ The range of the PE-based $SF'$-values does not correspond to the
 uncertainty of the $SF(20)$-values:
 ```{r PEfailCoop2, fig.width=6, fig.height=5}
 range(SF_resample,na.rm = TRUE)
-as_c_4 <- analyze_survival(RD = data[,-1],c_range = c(20))
-as_c_4$uncertainty[[3]]
+as_c_4 <- analyze_survival(RD = data[,-1],C = 20)
+as_c_4$uncertainty[4,c(3,5,6)]
 ```
 
 Even though the survival fraction can be accurately estimated under 
-consideration of cellular cooperation 
-```{r PEfailCoop2posta}
-sem_SF20 <- (as_c_4$uncertainty[[3]][2]-as_c_4$uncertainty[[3]][1])/4
-cat("    SF(20) : ",round(as_c_4$SF[[3]],digits = 3),"\n")
-cat("SEM SF(20) : ",round(sem_SF20,digits = 3),"\n")
-```
-the PE-based approach fails in 
+consideration of cellular cooperation the PE-based approach fails in 
 returning a trustworthy estimate of the fraction of cells losing their 
 potential due to the treatment (see histogram).
 
 In particular, the average of PE-based $SF'$ calculations does not 
-asymptotically tend to an interpretable value.
-In case of strong cellular cooperation, the PE-based calculated $SF'$-value is heavily 
-affected by this cellular cooperation and the treatment effect of interest is
-degraded to a side effect: 
-```{r PEfailCoop2postb}
-cat("    SF'    : ",round(mean(SF_resample,na.rm = TRUE),digits = 3),"\n")
-cat("SEM SF'    : ",round(sd(SF_resample,na.rm = TRUE)/
-                            sqrt(length(SF_resample)),digits = 3),"\n")
-```
-As a consequence, the fraction of cells keeping their clonogenic potential 
-after treatment is far outside the uncertainty interval of the average 
-$SF'$-value of the PE-based approach.
+asymptotically tend to a meaningful value.
+In case of strong cellular cooperation, the PE-based calculated $SF'$-value is 
+heavily affected by this cellular cooperation and the treatment effect of 
+interest is degraded to a side effect.
 
 ## Conclusion from (1) and (2)
 
